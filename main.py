@@ -7,6 +7,7 @@ from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_core.runnables import RunnableConfig
 from deepagents import create_deep_agent
+from deepagents.backends import FilesystemBackend
 
 from rich.console import Console
 
@@ -51,6 +52,7 @@ agent = create_deep_agent(
     tools=tool_lists,
     system_prompt=system_prompt,
     checkpointer=checkpointer,
+    backend=FilesystemBackend(root_dir=".", virtual_mode=True),
 )
 
 
