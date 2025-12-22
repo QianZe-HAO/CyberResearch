@@ -12,10 +12,11 @@ from .synbolic_math import (
     preprocess_math,
     calculate,
 )
-
+from .web_crawler import crawl_url
 
 __all__ = [
     internet_search,
+    crawl_url,
     get_current_datetime,
     get_current_timestamp,
     convert_timestamp_to_datetime,
