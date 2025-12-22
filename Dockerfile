@@ -6,5 +6,9 @@ COPY . .
 # Install dependencies
 RUN uv sync
 
+# Install playwright and dependencies
+RUN playwright install-deps
+RUN playwright install chromium
+
 # Run the application
-CMD ["uv", "run", "main.py"]
+CMD ["streamlit", "run", "main.py"]
