@@ -5,10 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "crawl4ai>=0.7.8",
     "deepagents>=0.3.0",
     "dotenv>=0.9.9",
     "langchain-openai>=1.1.6",
     "rich>=14.2.0",
+    "streamlit>=1.52.2",
     "sympy>=1.14.0",
     "tavily-python>=0.7.17",
 ]
