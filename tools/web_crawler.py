@@ -7,6 +7,8 @@ from crawl4ai import (
     PruningContentFilter,
     CrawlResult,
 )
+from typing import cast
+from crawl4ai.models import MarkdownGenerationResult
 
 
 def crawl_url(url: str, headless: bool = True, verbose: bool = False) -> str:
@@ -26,6 +28,7 @@ def crawl_url(url: str, headless: bool = True, verbose: bool = False) -> str:
         browser_config = BrowserConfig(
             headless=headless,
             verbose=verbose,
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
         )
         async with AsyncWebCrawler(config=browser_config) as crawler:
             crawler_config = CrawlerRunConfig(
@@ -35,7 +38,12 @@ def crawl_url(url: str, headless: bool = True, verbose: bool = False) -> str:
             )
             try:
                 result: CrawlResult = await crawler.arun(url=url, config=crawler_config)
-                return result.markdown.raw_markdown
+                # return result.markdown.raw_markdown
+                markdown_result = getattr(
+                    result.markdown, "_markdown_result", None)
+                if markdown_result is not None:
+                    return cast(MarkdownGenerationResult, markdown_result).raw_markdown
+                return result.markdown or ""  # fallback to string coercion
             except Exception as e:
                 return f"Error: {str(e)}"
 
