@@ -14,6 +14,7 @@ A conversational AI research assistant powered by LangChain and DeepAgents, desi
 
 ### Web & Data
 - `internet_search(query: str)` – Performs a real-time web search using precise queries.
+- `crawl_url(url: str)` – Crawls a URL and extracts text content based on a URL.
 
 ### Date & Time
 - `get_current_datetime()` – Returns the current date and time.
