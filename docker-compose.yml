@@ -1,0 +1,12 @@
+services:
+  cyber-researcher:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./sandbox:/app/sandbox
+    restart: unless-stopped
