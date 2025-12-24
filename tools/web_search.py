@@ -19,3 +19,28 @@ def internet_search(
 ):
     """Run a web search with improved query understanding"""
     return tavily_client.search(query, max_results=max_results)
+
+
+def crawl_url(
+    urls: list[str] | str,
+    format: str = "markdown",
+    extract_depth: str = "basic",
+) -> dict:
+    """
+    Extract content from one or more URLs using Tavily's extraction API.
+
+    Args:
+        urls: A single URL or list of URLs to extract content from.
+        format: Output format - 'markdown' (default) or 'text'.
+        extract_depth: How deeply to extract - 'basic' or 'advanced' (default).
+        max_retries: Number of retry attempts on failure (not directly used by Tavily client, but can be extended).
+
+    Returns:
+        Dictionary containing extracted 'results' and 'failed_results'.
+    """
+    return tavily_client.extract(
+        urls=urls,
+        include_images=False,
+        format=format,
+        extract_depth=extract_depth,
+    )
