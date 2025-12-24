@@ -78,6 +78,13 @@ if "agent" not in st.session_state:
 if "printed_messages" not in st.session_state:
     st.session_state['printed_messages'] = 0
 
+# ------------------------------------------
+USE_CRAWL4AI = os.getenv("USE_CRAWL4AI", "False").lower() == "true"
+
+if USE_CRAWL4AI:
+    web_crawler_type = "Crawl4AI"
+else:
+    web_crawler_type = "Tavily Extract"
 
 # ------------------------------------------
 # Sidebar
@@ -97,6 +104,11 @@ with st.sidebar:
     st.markdown(f"""
     - **Model**: `{main_llm_model_name}`
     - **Temperature**: `{temperature}`
+    """)
+    st.divider()
+    st.subheader("Web Crawler")
+    st.markdown(f"""
+    - `{web_crawler_type}`
     """)
 
     st.divider()
