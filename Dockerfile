@@ -16,6 +16,7 @@ RUN if [ "$USE_CRAWL4AI" = "True" ] || [ "$USE_CRAWL4AI" = "true" ]; then \
       uv run playwright install chromium; \
     else \
       echo "Skipping Playwright installation (USE_CRAWL4AI=$USE_CRAWL4AI)"; \
+      uv remove crawl4ai; \
     fi
 
 
