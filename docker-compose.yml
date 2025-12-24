@@ -10,3 +10,12 @@ services:
     volumes:
       - ./sandbox:/app/sandbox
     restart: unless-stopped
+    networks:
+      - cyber-researcher-network
+
+networks:
+  cyber-researcher-network:
+   driver: bridge
+   ipam:
+     config:
+        - subnet: 10.74.100.0/24
