@@ -1,7 +1,9 @@
 import os
 import uuid
+from pathlib import Path
 from dotenv import load_dotenv
 import streamlit as st
+import shutil
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
@@ -16,8 +18,8 @@ from tools import __all__ as tool_lists
 from utils import print_message
 
 
-st.set_page_config(page_title="Cyber Researcher", page_icon=":robot:")
-st.title("Cyber Researcher")
+st.set_page_config(page_title="Cyber Researcher", page_icon=":robot:",layout="wide")
+st.markdown("## Cyber Researcher")
 
 
 load_dotenv()
@@ -54,19 +56,18 @@ checkpointer = InMemorySaver()
 
 
 if "messages" not in st.session_state:
-    st.session_state['messages'] = []
+    st.session_state["messages"] = []
 if "thread_id" not in st.session_state:
-    st.session_state['thread_id'] = str(uuid.uuid4())
+    st.session_state["thread_id"] = str(uuid.uuid4())
 
 
-config: RunnableConfig = {"configurable": {
-    "thread_id": st.session_state['thread_id']}}
+config: RunnableConfig = {"configurable": {"thread_id": st.session_state["thread_id"]}}
 print(f"Thread ID: {st.session_state['thread_id']}")
 
 
 # create the agent with session state
 if "agent" not in st.session_state:
-    st.session_state['agent'] = create_deep_agent(
+    st.session_state["agent"] = create_deep_agent(
         model=model,
         tools=tool_lists,
         system_prompt=system_prompt,
@@ -76,7 +77,7 @@ if "agent" not in st.session_state:
 
 
 if "printed_messages" not in st.session_state:
-    st.session_state['printed_messages'] = 0
+    st.session_state["printed_messages"] = 0
 
 # ------------------------------------------
 USE_CRAWL4AI = os.getenv("USE_CRAWL4AI", "False").lower() == "true"
@@ -90,34 +91,97 @@ else:
 # Sidebar
 with st.sidebar:
     st.header("Cyber Analyst Agent")
-    st.markdown("""
-    This agent performs in-depth research by:
-    - Breaking down queries
-    - Searching the web
-    - Synthesizing findings
-    - Providing structured reports
-    """)
 
-    st.divider()
+    st.subheader("Chatbot Configuration")
+    st.markdown(
+        f"""
+    - **LLM Model**: `{main_llm_model_name}`
+    - **LLM Temperature**: `{temperature}`
+    - **Web Crawler Type**: `{web_crawler_type}`
+    """
+    )
 
-    st.subheader("Model Configuration")
-    st.markdown(f"""
-    - **Model**: `{main_llm_model_name}`
-    - **Temperature**: `{temperature}`
-    """)
-    st.divider()
-    st.subheader("Web Crawler")
-    st.markdown(f"""
-    - `{web_crawler_type}`
-    """)
+    # New: Sandbox Files Section (Alternative with selectbox)
+    st.subheader("Sandbox Files")
+    sandbox_dir = "./sandbox"
+    os.makedirs(sandbox_dir, exist_ok=True)
+    sandbox_dir = Path("./sandbox")
+
+    uploaded_file = st.file_uploader(
+        "Choose a file to upload",
+        type=["md"],
+        accept_multiple_files=False,
+        label_visibility="visible",
+    )
+
+    if "uploaded_file_name" not in st.session_state:
+        st.session_state["uploaded_file_name"] = None
+
+    if uploaded_file is not None:
+
+        if st.session_state["uploaded_file_name"] != uploaded_file.name:
+            upload_dest = sandbox_dir / uploaded_file.name
+            try:
+                with open(upload_dest, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                st.toast(f"Uploaded: `{uploaded_file.name}`")
+                st.session_state["uploaded_file_name"] = uploaded_file.name
+                st.rerun()
+            except Exception as e:
+                st.toast(f"Failed to save file: {e}")
+        else:
+            st.toast(f"`{uploaded_file.name}` has already been uploaded.")
+
+    if os.path.exists(sandbox_dir):
+
+        files = [
+            f.relative_to(sandbox_dir) for f in sandbox_dir.rglob("*") if f.is_file()
+        ]
+
+        if files:
+            selected_file = st.selectbox(
+                "Choose a file to view",
+                options=files,
+                key="selected_sandbox_file",
+                width="stretch",
+            )
+            if st.button("Show File", key="show_file_btn", width="stretch"):
+                file_path = os.path.join(sandbox_dir, selected_file)
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+
+                    st.session_state["messages"].append(
+                        AIMessage(content=f"### File: `{selected_file}`\n\n" + content)
+                    )
+
+                    # st.rerun()
+                except Exception as e:
+                    st.error(f"Could not read file: {e}")
+
+            if st.button("Clear Sandbox", width="stretch"):
+                sandbox_dir = Path("./sandbox")
+                try:
+                    if sandbox_dir.exists():
+                        shutil.rmtree(sandbox_dir)
+                    sandbox_dir.mkdir(exist_ok=True)
+                    st.success("Sandbox cleared successfully.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error clearing sandbox: {e}")
+
+        else:
+            st.caption("No files in sandbox.")
+    else:
+        st.caption("Sandbox directory not found.")
 
     st.divider()
 
     if st.button("Start a New Session", width="stretch"):
-        st.session_state['messages'] = []
-        st.session_state['printed_messages'] = 0
-        st.session_state['thread_id'] = str(uuid.uuid4())
-        st.session_state['agent'] = create_deep_agent(
+        st.session_state["messages"] = []
+        st.session_state["printed_messages"] = 0
+        st.session_state["thread_id"] = str(uuid.uuid4())
+        st.session_state["agent"] = create_deep_agent(
             model=model,
             tools=tool_lists,
             system_prompt=system_prompt,
@@ -126,17 +190,17 @@ with st.sidebar:
         )
         st.rerun()
 
-    st.caption("Session ID: `" + st.session_state['thread_id'][:16] + "...`")
+    st.caption("Session ID: `" + st.session_state["thread_id"][:16] + "...`")
 
 # show the history messages
-for msg in st.session_state['messages']:
+for msg in st.session_state["messages"]:
     with st.chat_message("user" if isinstance(msg, HumanMessage) else "assistant"):
         st.markdown(msg.content)
 
 
 if prompt := st.chat_input("Ask me anything about a topic..."):
     human_msg = HumanMessage(content=prompt)
-    st.session_state['messages'].append(human_msg)
+    st.session_state["messages"].append(human_msg)
     console = Console()
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -147,7 +211,7 @@ if prompt := st.chat_input("Ask me anything about a topic..."):
             full_response = ""
 
             try:
-                for step in st.session_state['agent'].stream(
+                for step in st.session_state["agent"].stream(
                     {"messages": [human_msg]},
                     config=config,
                     stream_mode="values",
@@ -155,11 +219,11 @@ if prompt := st.chat_input("Ask me anything about a topic..."):
                     messages: list[BaseMessage] = step["messages"]
                     latest_msg = messages[-1]
                     # check if the latest message is an AI message and has content to displayeresponse_container
-                    for msg in messages[st.session_state['printed_messages']:]:
+                    for msg in messages[st.session_state["printed_messages"] :]:
                         msg: BaseMessage
                         print_message(console=console, msg=msg)
 
-                    st.session_state['printed_messages'] = len(messages)
+                    st.session_state["printed_messages"] = len(messages)
 
                     if isinstance(latest_msg, AIMessage) and latest_msg.content:
                         full_response = latest_msg.content
@@ -167,7 +231,7 @@ if prompt := st.chat_input("Ask me anything about a topic..."):
 
                 # save the AI message to the session state
                 ai_msg = AIMessage(content=full_response)
-                st.session_state['messages'].append(ai_msg)
+                st.session_state["messages"].append(ai_msg)
 
             except Exception as e:
                 st.error(f"Error: {str(e)}")
