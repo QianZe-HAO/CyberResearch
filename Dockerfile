@@ -7,8 +7,8 @@ COPY . .
 RUN uv sync
 
 # Install playwright and dependencies
-RUN playwright install-deps
-RUN playwright install chromium
+RUN uv run playwright install-deps
+RUN uv run playwright install chromium
 
 RUN mkdir -p /app/sandbox
 # Run the application on port 8501
