@@ -15,4 +15,4 @@ RUN mkdir -p /app/sandbox
 EXPOSE 8501
 
 # Run the application
-CMD ["streamlit", "run", "main.py"]
+CMD ["uv", "run", "streamlit", "run", "main.py"]
