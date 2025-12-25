@@ -1,11 +1,10 @@
 [project]
 name = "cyberresearch"
 version = "0.1.0"
-description = "Add your description here"
+description = "A research LangChain Agent based on LangChain DeepAgent"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "crawl4ai>=0.7.8",
     "deepagents>=0.3.0",
     "dotenv>=0.9.9",
     "langchain-openai>=1.1.6",
@@ -14,3 +13,6 @@ dependencies = [
     "sympy>=1.14.0",
     "tavily-python>=0.7.17",
 ]
+
+[project.optional-dependencies]
+crawl = ["crawl4ai>=0.7.8"]
