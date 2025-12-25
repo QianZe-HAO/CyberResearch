@@ -1,0 +1,23 @@
+services:
+  cyber-researcher:
+    build:
+      context: .
+      dockerfile: Dockerfile.alpine
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      - USE_CRAWL4AI=False
+    volumes:
+      - ./sandbox:/app/sandbox
+    restart: unless-stopped
+    networks:
+      - cyber-researcher-network
+
+networks:
+  cyber-researcher-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.74.100.0/24
