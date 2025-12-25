@@ -6,12 +6,6 @@ COPY . .
 # Install dependencies
 RUN uv sync
 
-
-RUN if [ "$USE_CRAWL4AI" = "False" ] || [ "$USE_CRAWL4AI" = "false" ]; then \
-    echo "Removing crawl4ai from dependencies..."; \
-    sed -i '/^[[:space:]]*"crawl4ai[>=,~^].*",$/d' pyproject.toml; \
-    fi
-
 RUN mkdir -p /app/sandbox
 # Run the application on port 8501
 EXPOSE 8501
