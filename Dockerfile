@@ -4,7 +4,7 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies
-RUN uv sync
+RUN uv sync --extra crawl
 
 # Install playwright and dependencies
 # RUN uv run playwright install-deps
