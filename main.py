@@ -16,9 +16,9 @@ from rich.console import Console
 
 from tools import __all__ as tool_lists
 from utils import print_message
+from config import SYSTEM_PROMPT, SANDBOX_DIR
 
-
-st.set_page_config(page_title="Cyber Researcher", page_icon=":robot:",layout="wide")
+st.set_page_config(page_title="Cyber Researcher", page_icon=":robot:", layout="wide")
 st.markdown("## Cyber Researcher")
 
 
@@ -42,15 +42,17 @@ model = ChatOpenAI(
     temperature=temperature,
 )
 
-system_prompt = """
-You are a meticulous research analyst. When given a topic:
-1. Break down the query into key components and identify what needs clarification.
-2. Use the internet_search tool with precise, well-constructed queries to gather accurate, up-to-date information.
-3. Cross-check facts across multiple sources when possible.
-4. Synthesize findings into a clear, well-structured report with sections: Overview, Key Features, Use Cases, and Recent Developments.
-5. Cite key insights and avoid speculation. If information is unclear, note that as a limitation.
-Always aim for depth, accuracy, and readability.
-"""
+# system_prompt = """
+# You are a meticulous research analyst. When given a topic:
+# 1. Break down the query into key components and identify what needs clarification.
+# 2. Use the internet_search tool with precise, well-constructed queries to gather accurate, up-to-date information.
+# 3. Cross-check facts across multiple sources when possible.
+# 4. Synthesize findings into a clear, well-structured report with sections: Overview, Key Features, Use Cases, and Recent Developments.
+# 5. Cite key insights and avoid speculation. If information is unclear, note that as a limitation.
+# Always aim for depth, accuracy, and readability.
+# """
+
+system_prompt = SYSTEM_PROMPT
 
 checkpointer = InMemorySaver()
 
@@ -72,7 +74,7 @@ if "agent" not in st.session_state:
         tools=tool_lists,
         system_prompt=system_prompt,
         checkpointer=checkpointer,
-        backend=FilesystemBackend(root_dir="./sandbox", virtual_mode=True),
+        backend=FilesystemBackend(root_dir=SANDBOX_DIR, virtual_mode=True),
     )
 
 
@@ -103,9 +105,9 @@ with st.sidebar:
 
     # New: Sandbox Files Section (Alternative with selectbox)
     st.subheader("Sandbox Files")
-    sandbox_dir = "./sandbox"
+    sandbox_dir = SANDBOX_DIR
     os.makedirs(sandbox_dir, exist_ok=True)
-    sandbox_dir = Path("./sandbox")
+    sandbox_dir = Path(SANDBOX_DIR)
 
     uploaded_file = st.file_uploader(
         "Choose a file to upload",
@@ -160,7 +162,7 @@ with st.sidebar:
                     st.error(f"Could not read file: {e}")
 
             if st.button("Clear Sandbox", width="stretch"):
-                sandbox_dir = Path("./sandbox")
+                sandbox_dir = Path(SANDBOX_DIR)
                 try:
                     if sandbox_dir.exists():
                         shutil.rmtree(sandbox_dir)
@@ -186,7 +188,7 @@ with st.sidebar:
             tools=tool_lists,
             system_prompt=system_prompt,
             checkpointer=checkpointer,
-            backend=FilesystemBackend(root_dir="./sandbox", virtual_mode=True),
+            backend=FilesystemBackend(root_dir=SANDBOX_DIR, virtual_mode=True),
         )
         st.rerun()
 
@@ -196,6 +198,45 @@ with st.sidebar:
 for msg in st.session_state["messages"]:
     with st.chat_message("user" if isinstance(msg, HumanMessage) else "assistant"):
         st.markdown(msg.content)
+
+
+# if prompt := st.chat_input("Ask me anything about a topic..."):
+#     human_msg = HumanMessage(content=prompt)
+#     st.session_state["messages"].append(human_msg)
+#     console = Console()
+#     with st.chat_message("user"):
+#         st.markdown(prompt)
+
+#     with st.chat_message("assistant"):
+#         with st.spinner("Thinking..."):
+#             response_container = st.empty()
+#             full_response = ""
+
+#             try:
+#                 for step in st.session_state["agent"].stream(
+#                     {"messages": [human_msg]},
+#                     config=config,
+#                     stream_mode="values",
+#                 ):
+#                     messages: list[BaseMessage] = step["messages"]
+#                     latest_msg = messages[-1]
+#                     # check if the latest message is an AI message and has content to displayeresponse_container
+#                     for msg in messages[st.session_state["printed_messages"] :]:
+#                         msg: BaseMessage
+#                         print_message(console=console, msg=msg)
+
+#                     st.session_state["printed_messages"] = len(messages)
+
+#                     if isinstance(latest_msg, AIMessage) and latest_msg.content:
+#                         full_response = latest_msg.content
+#                         response_container.markdown(full_response)
+
+#                 # save the AI message to the session state
+#                 ai_msg = AIMessage(content=full_response)
+#                 st.session_state["messages"].append(ai_msg)
+
+#             except Exception as e:
+#                 st.error(f"Error: {str(e)}")
 
 
 if prompt := st.chat_input("Ask me anything about a topic..."):
@@ -217,19 +258,26 @@ if prompt := st.chat_input("Ask me anything about a topic..."):
                     stream_mode="values",
                 ):
                     messages: list[BaseMessage] = step["messages"]
-                    latest_msg = messages[-1]
-                    # check if the latest message is an AI message and has content to displayeresponse_container
+
                     for msg in messages[st.session_state["printed_messages"] :]:
                         msg: BaseMessage
+
                         print_message(console=console, msg=msg)
 
+                        if isinstance(msg, HumanMessage):
+                            continue
+                        elif isinstance(msg, AIMessage):
+                            if msg.tool_calls:
+                                for tool_call in msg.tool_calls:
+                                    tool_name = tool_call["name"]
+                                    tool_args = tool_call["args"]
+                                    full_response += f"\n\n**Using Tool:** `{tool_name}` with `{tool_args}`"
+                            if msg.content:
+                                full_response += "\n\n" + msg.content
+
                     st.session_state["printed_messages"] = len(messages)
+                    response_container.markdown(full_response)
 
-                    if isinstance(latest_msg, AIMessage) and latest_msg.content:
-                        full_response = latest_msg.content
-                        response_container.markdown(full_response)
-
-                # save the AI message to the session state
                 ai_msg = AIMessage(content=full_response)
                 st.session_state["messages"].append(ai_msg)
 
