@@ -4,10 +4,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 import streamlit as st
 import shutil
+import sqlite3
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
-from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
+
 from langchain_core.runnables import RunnableConfig
 from deepagents import create_deep_agent
 from deepagents.backends import FilesystemBackend
@@ -54,8 +56,10 @@ model = ChatOpenAI(
 
 system_prompt = SYSTEM_PROMPT
 
-checkpointer = InMemorySaver()
+conn = sqlite3.connect("./history/checkpoints.sqlite", check_same_thread=False)
+memory = SqliteSaver(conn)
 
+checkpointer = memory
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
