@@ -16,4 +16,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-crawl = ["crawl4ai>=0.7.8"]
+crawl = [
+    "crawl4ai>=0.7.8",
+]
