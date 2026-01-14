@@ -151,19 +151,31 @@ with st.sidebar:
                 key="selected_sandbox_file",
                 width="stretch",
             )
+            file_path = sandbox_dir / selected_file
+
             if st.button("Show File", key="show_file_btn", width="stretch"):
-                file_path = os.path.join(sandbox_dir, selected_file)
                 try:
                     with open(file_path, "r", encoding="utf-8") as f:
                         content = f.read()
-
                     st.session_state["messages"].append(
                         AIMessage(content=f"### File: `{selected_file}`\n\n" + content)
                     )
-
-                    # st.rerun()
                 except Exception as e:
                     st.error(f"Could not read file: {e}")
+
+            with open(file_path, "rb") as f:
+                st.download_button(
+                    label="Download Selected File",
+                    data=f,
+                    file_name=str(selected_file),
+                    mime=(
+                        "text/markdown"
+                        if selected_file.suffix == ".md"
+                        else "text/plain"
+                    ),
+                    key="download_file_btn",
+                    use_container_width=True,
+                )
 
             if st.button("Clear Sandbox", width="stretch"):
                 sandbox_dir = Path(SANDBOX_DIR)
@@ -202,45 +214,6 @@ with st.sidebar:
 for msg in st.session_state["messages"]:
     with st.chat_message("user" if isinstance(msg, HumanMessage) else "assistant"):
         st.markdown(msg.content)
-
-
-# if prompt := st.chat_input("Ask me anything about a topic..."):
-#     human_msg = HumanMessage(content=prompt)
-#     st.session_state["messages"].append(human_msg)
-#     console = Console()
-#     with st.chat_message("user"):
-#         st.markdown(prompt)
-
-#     with st.chat_message("assistant"):
-#         with st.spinner("Thinking..."):
-#             response_container = st.empty()
-#             full_response = ""
-
-#             try:
-#                 for step in st.session_state["agent"].stream(
-#                     {"messages": [human_msg]},
-#                     config=config,
-#                     stream_mode="values",
-#                 ):
-#                     messages: list[BaseMessage] = step["messages"]
-#                     latest_msg = messages[-1]
-#                     # check if the latest message is an AI message and has content to displayeresponse_container
-#                     for msg in messages[st.session_state["printed_messages"] :]:
-#                         msg: BaseMessage
-#                         print_message(console=console, msg=msg)
-
-#                     st.session_state["printed_messages"] = len(messages)
-
-#                     if isinstance(latest_msg, AIMessage) and latest_msg.content:
-#                         full_response = latest_msg.content
-#                         response_container.markdown(full_response)
-
-#                 # save the AI message to the session state
-#                 ai_msg = AIMessage(content=full_response)
-#                 st.session_state["messages"].append(ai_msg)
-
-#             except Exception as e:
-#                 st.error(f"Error: {str(e)}")
 
 
 if prompt := st.chat_input("Ask me anything about a topic..."):
