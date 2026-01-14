@@ -5,9 +5,16 @@ from dotenv import load_dotenv
 import streamlit as st
 import shutil
 import sqlite3
-
+import json
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+from langchain_core.messages import (
+    BaseMessage,
+    HumanMessage,
+    AIMessage,
+    ToolMessage,
+)
+
+
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from langchain_core.runnables import RunnableConfig
@@ -240,6 +247,8 @@ if prompt := st.chat_input("Ask me anything about a topic..."):
                         msg: BaseMessage
 
                         print_message(console=console, msg=msg)
+                        # print('-----------------------------')
+                        # print(msg)
 
                         if isinstance(msg, HumanMessage):
                             continue
@@ -251,6 +260,26 @@ if prompt := st.chat_input("Ask me anything about a topic..."):
                                     full_response += f"\n\n**Using Tool:** `{tool_name}` with `{tool_args}`"
                             if msg.content:
                                 full_response += "\n\n" + msg.content
+                        elif isinstance(msg, ToolMessage):
+
+                            if msg.name == "internet_search":
+                                try:
+                                    msg_data: dict = json.loads(msg.content)
+                                    search_result = msg_data.get("results", [])
+
+                                    if search_result:
+                                        full_response += "\n\nWeb Search Results:\n\n"
+                                        for result in search_result:
+                                            title = result.get("title", "No Title")
+                                            url = result.get("url", "#")
+                                            full_response += f"- [{title}]({url})\n"
+                                except json.JSONDecodeError:
+                                    full_response += (
+                                        "\n\n[Error: Failed to parse search results.]\n"
+                                    )
+
+                        else:
+                            full_response += "\n\n>No relevant results found.\n"
 
                     st.session_state["printed_messages"] = len(messages)
                     response_container.markdown(full_response)
